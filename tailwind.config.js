@@ -1,0 +1,75 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    './pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './components/**/*.{js,ts,jsx,tsx,mdx}',
+    './app/**/*.{js,ts,jsx,tsx,mdx}',
+  ],
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['Outfit', 'sans-serif'],
+        display: ['Syne', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
+      },
+      colors: {
+        // Map CSS variables — works with both themes
+        bg:        'var(--bg)',
+        surface:   'var(--surface)',
+        's2':      'var(--surface-2)',
+        's3':      'var(--surface-3)',
+        border:    'var(--border)',
+        'border2': 'var(--border-2)',
+        primary:   'var(--primary)',
+        'primary-dk': 'var(--primary-dk)',
+        'primary-lt': 'var(--primary-lt)',
+        accent:    'var(--accent)',
+        'accent-dk': 'var(--accent-dk)',
+        tx:        'var(--text)',
+        'tx2':     'var(--text-2)',
+        muted:     'var(--muted)',
+        'muted2':  'var(--muted-2)',
+        success:   'var(--success)',
+        warning:   'var(--warning)',
+        error:     'var(--error)',
+      },
+      backgroundImage: {
+        'gradient-primary': 'linear-gradient(135deg, var(--primary), var(--accent))',
+        'gradient-mesh':    'radial-gradient(at 40% 20%, hsla(265,80%,50%,0.15) 0px,transparent 50%), radial-gradient(at 80% 0%, hsla(189,100%,56%,0.1) 0px,transparent 50%), radial-gradient(at 0% 50%, hsla(265,80%,50%,0.08) 0px,transparent 50%)',
+      },
+      boxShadow: {
+        'glow-primary': '0 0 20px rgba(139,92,246,0.4)',
+        'glow-accent':  '0 0 20px rgba(34,211,238,0.35)',
+        'card':    '0 4px 24px rgba(0,0,0,0.4)',
+        'card-lg': '0 8px 40px rgba(0,0,0,0.6)',
+      },
+      animation: {
+        'float':       'float 6s ease-in-out infinite',
+        'float-slow':  'floatSlow 9s ease-in-out infinite',
+        'spin-slow':   'spin-slow 20s linear infinite',
+        'ticker':      'ticker 30s linear infinite',
+        'shimmer':     'shimmer 1.8s linear infinite',
+        'gradient':    'gradientShift 6s ease infinite',
+        'border-glow': 'borderGlow 3s ease-in-out infinite',
+        'orb-pulse':   'orb-pulse 5s ease-in-out infinite',
+        'live-ring':   'live-ring 1.5s ease-out infinite',
+        'fade-up':     'fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) both',
+        'scale-in':    'scaleIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both',
+        'slide-left':  'slideLeft 0.6s cubic-bezier(0.16,1,0.3,1) both',
+        'slide-right': 'slideRight 0.6s cubic-bezier(0.16,1,0.3,1) both',
+        'blink':       'blinkCursor 0.7s step-end infinite',
+        'pulse-badge': 'pulse-badge 2s infinite',
+      },
+      transitionTimingFunction: {
+        'spring':   'cubic-bezier(0.34,1.56,0.64,1)',
+        'out-expo': 'cubic-bezier(0.16,1,0.3,1)',
+      },
+      scale: {
+        '102': '1.02',
+        '103': '1.03',
+        '108': '1.08',
+      },
+    },
+  },
+  plugins: [],
+};
