@@ -56,7 +56,7 @@ export default function Footer() {
                 <Zap className="w-4 h-4 text-white" />
               </div>
               <span className="font-display font-bold text-xl gradient-text">Planora</span> */}
-              <Image src="/planora.png" alt="Planora" width={180} height={40} />
+              <Image src="https://res.cloudinary.com/dgdlyrgda/image/upload/v1774739562/Planora_vuc9fl.png" alt="Planora" width={180} height={40} />
             </Link>
             <p className="text-[var(--muted)] text-sm leading-relaxed max-w-xs">
               The modern event platform for creators who care about experience. Create, discover, and join events that matter.

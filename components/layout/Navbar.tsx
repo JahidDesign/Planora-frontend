@@ -84,7 +84,8 @@ export default function Navbar() {
               <div className="absolute -inset-1 rounded-xl gradient-bg opacity-0 group-hover:opacity-30 blur-md transition-opacity duration-300" />
             </div>
             <span className="font-display font-bold text-xl gradient-text">Planora</span> */}
-            <Image src="/Planora.png" alt="Planora" width={180} height={40} />
+            <Image src="https://res.cloudinary.com/dgdlyrgda/image/upload/v1774739562/Planora_vuc9fl.png"
+              alt="Planora" width={180} height={40} />
           </Link>
 
           {/* Desktop Nav */}
