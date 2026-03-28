@@ -4,13 +4,32 @@ import { Providers } from '@/components/Providers';
 import { Toaster } from 'react-hot-toast';
 
 export const metadata: Metadata = {
-  title: { default: 'Planora — Event Management Platform', template: '%s | Planora' },
-  description: 'Create, discover, and join amazing events. Planora connects people through unforgettable experiences.',
+  title: {
+    default: 'Planora — Event Management Platform',
+    template: '%s | Planora',
+  },
+  description:
+    'Create, discover, and join amazing events. Planora connects people through unforgettable experiences.',
   keywords: ['events', 'event management', 'conferences', 'meetups', 'workshops'],
   themeColor: '#0B0F19',
+
+
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+    ],
+    shortcut: '/favicon.svg',
+    apple: '/icon.svg',
+  },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -27,6 +46,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             `,
           }}
         />
+
+        {/* Fonts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
@@ -34,9 +55,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
+
       <body className="bg-[var(--bg)] text-[var(--text)] antialiased">
         <Providers>
           {children}
+
+          {/* Toast UI */}
           <Toaster
             position="top-right"
             toastOptions={{
@@ -50,8 +74,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 fontFamily: 'Outfit, sans-serif',
                 boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
               },
-              success: { iconTheme: { primary: 'var(--success)', secondary: 'var(--surface)' } },
-              error:   { iconTheme: { primary: 'var(--error)',   secondary: 'var(--surface)' } },
+              success: {
+                iconTheme: {
+                  primary: 'var(--success)',
+                  secondary: 'var(--surface)',
+                },
+              },
+              error: {
+                iconTheme: {
+                  primary: 'var(--error)',
+                  secondary: 'var(--surface)',
+                },
+              },
             }}
           />
         </Providers>

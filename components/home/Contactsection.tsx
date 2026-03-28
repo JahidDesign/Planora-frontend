@@ -4,9 +4,8 @@ import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Mail, MessageSquare, User, Image as ImageIcon,
-  Send, CheckCircle2, Sparkles, MapPin, Clock, ArrowRight, X,
+  Send, CheckCircle2, MapPin, Clock, ArrowRight, X,
 } from 'lucide-react';
-import api from '@/lib/api';
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -62,7 +61,6 @@ function Field({
 
   return (
     <div className="relative">
-      {/* border ring */}
       <div
         className="relative rounded-xl border transition-all duration-200"
         style={{
@@ -70,12 +68,13 @@ function Field({
           boxShadow: focused ? `0 0 0 3px ${color}22` : 'none',
         }}
       >
-        {/* icon */}
-        <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" style={{ top: textarea ? 22 : undefined }}>
+        <div
+          className="absolute left-4 pointer-events-none"
+          style={{ top: textarea ? 22 : '50%', transform: textarea ? 'none' : 'translateY(-50%)' }}
+        >
           <Icon className="w-4 h-4" style={{ color: focused ? color : 'var(--muted)' }} />
         </div>
 
-        {/* floating label */}
         <label
           htmlFor={id}
           className="absolute left-10 transition-all duration-150 pointer-events-none select-none"
@@ -154,7 +153,12 @@ function PhotoUpload({ value, onChange }: { value: string; onChange: (v: string)
           onClick={() => inputRef.current?.click()}
           onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
           onDragLeave={() => setDragging(false)}
-          onDrop={(e) => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragging(false);
+            const f = e.dataTransfer.files[0];
+            if (f) handleFile(f);
+          }}
           className="cursor-pointer flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-6 transition-all duration-200"
           style={{
             borderColor: dragging ? 'var(--primary)' : 'var(--border)',
@@ -173,7 +177,10 @@ function PhotoUpload({ value, onChange }: { value: string; onChange: (v: string)
         type="file"
         accept="image/*"
         className="hidden"
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) handleFile(f);
+        }}
       />
     </div>
   );
@@ -197,17 +204,29 @@ export default function ContactSection() {
     }
     setError('');
     setLoading(true);
+
     try {
-      await api.post('/contact', {
-        ...(form.name && { name: form.name }),
-        ...(form.email && { email: form.email }),
-        message: form.message,
-        ...(form.photo && { photo: form.photo }),
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...(form.name && { name: form.name }),
+          ...(form.email && { email: form.email }),
+          message: form.message,
+          ...(form.photo && { photo: form.photo }),
+        }),
       });
+
+      if (!res.ok) {
+        // Try to extract a server-side error message
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error ?? 'Something went wrong. Please try again.');
+      }
+
       setSuccess(true);
       setForm({ name: '', email: '', message: '', photo: '' });
     } catch (err: any) {
-      setError(err?.response?.data?.error ?? 'Something went wrong. Please try again.');
+      setError(err?.message ?? 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -234,7 +253,6 @@ export default function ContactSection() {
 
         {/* Header */}
         <div className="text-center mb-16">
-
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -284,7 +302,7 @@ export default function ContactSection() {
               </div>
             ))}
 
-            {/* Decorative "send" illustration */}
+            {/* Decorative card */}
             <div className="card p-6 flex flex-col gap-3 mt-2 overflow-hidden relative">
               <div className="absolute inset-0 gradient-bg opacity-5 pointer-events-none" />
               <MessageSquare className="w-8 h-8 text-[var(--primary)]" />

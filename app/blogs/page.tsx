@@ -1,67 +1,55 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, SlidersHorizontal, X, Zap } from 'lucide-react';
+import { Search, X, BookOpen } from 'lucide-react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import EventCard from '@/components/events/EventCard';
-import { Input, EventCardSkeleton, EmptyState, PageHeader, Button } from '@/components/ui';
+import BlogCard from '@/components/blogs/BlogCard';
+import { Input, BlogCardSkeleton, EmptyState, PageHeader, Button } from '@/components/ui';
 import { useScrollReveal } from '@/hooks/useAnimations';
 import api from '@/lib/api';
 import { clsx } from 'clsx';
 
-const FILTERS = [
-  { label: 'All Events', type: '', fee: '', icon: '✦' },
-  { label: 'Public Free', type: 'PUBLIC', fee: 'free', icon: '🌍' },
-  { label: 'Public Paid', type: 'PUBLIC', fee: 'paid', icon: '💳' },
-  { label: 'Private Free', type: 'PRIVATE', fee: 'free', icon: '🔒' },
-  { label: 'Private Paid', type: 'PRIVATE', fee: 'paid', icon: '⭐' },
+const CATEGORIES = [
+  'All', 'Technology', 'Business', 'Design',
+  'Health', 'Education', 'Career',
 ];
 
-const CATEGORIES = ['All', 'Technology', 'Business', 'Design', 'Marketing', 'Health', 'Art', 'Science', 'Music'];
+const FILTERS = [
+  { label: 'All Posts', featured: '', icon: '✦' },
+  { label: 'Featured', featured: 'true', icon: '⭐' },
+];
 
-export default function EventsPage() {
+export default function BlogsPage() {
   useScrollReveal();
-  const searchParams = useSearchParams();
 
-  const [events, setEvents] = useState<any[]>([]);
+  const [blogs, setBlogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [filterIdx, setFilterIdx] = useState(0);
   const [category, setCategory] = useState('All');
+  const [filterIdx, setFilterIdx] = useState(0);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState<any>(null);
-  const [showFilters, setShowFilters] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
   const debounceRef = useRef<NodeJS.Timeout>();
 
-  // Read URL params on mount
-  useEffect(() => {
-    const type = searchParams.get('type') || '';
-    const fee = searchParams.get('fee') || '';
-    const idx = FILTERS.findIndex(f => f.type === type && f.fee === fee);
-    if (idx > -1) setFilterIdx(idx);
-  }, []);
-
-  const fetchEvents = useCallback(async () => {
+  const fetchBlogs = useCallback(async () => {
     setLoading(true);
     try {
       const f = FILTERS[filterIdx];
       const params: Record<string, string> = {
         page: String(page), limit: '12',
         ...(search && { search }),
-        ...(f.type && { type: f.type }),
-        ...(f.fee && { fee: f.fee }),
+        ...(f.featured && { featured: f.featured }),
         ...(category !== 'All' && { category }),
       };
-      const res = await api.get(`/events?${new URLSearchParams(params)}`);
-      setEvents(res.data.events || []);
+      const res = await api.get(`/my-blogs?${new URLSearchParams(params)}`);
+      setBlogs(res.data.blogs || []);
       setPagination(res.data.pagination);
       setTotalCount(res.data.pagination?.total || 0);
     } catch {
-      setEvents([]);
+      setBlogs([]);
     } finally {
       setLoading(false);
     }
@@ -69,9 +57,9 @@ export default function EventsPage() {
 
   useEffect(() => {
     clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(fetchEvents, search ? 350 : 0);
+    debounceRef.current = setTimeout(fetchBlogs, search ? 350 : 0);
     return () => clearTimeout(debounceRef.current);
-  }, [fetchEvents]);
+  }, [fetchBlogs]);
 
   const handleFilter = (i: number) => { setFilterIdx(i); setPage(1); };
 
@@ -79,22 +67,22 @@ export default function EventsPage() {
     <>
       <Navbar />
       <main className="min-h-screen pt-16">
-        {/* Page header */}
         <PageHeader
-          label="Discover"
-          title="Find Your Next"
-          titleHighlight="Event"
-          description="Search thousands of events — filter by type, category, and more."
+          label="Blog"
+          title="Stories, Guides &"
+          titleHighlight="Insights"
+          description="Deep dives, tutorials, and perspectives from the Planora community."
         />
 
-        {/* Search + Filters bar */}
+        {/* Sticky search + filter bar */}
         <div className="sticky top-16 z-30 bg-[var(--surface)]/90 backdrop-blur-xl border-b border-[var(--border)] shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+
             {/* Search row */}
             <div className="flex gap-3 mb-4">
               <div className="flex-1 max-w-xl">
                 <Input
-                  placeholder="Search events or organizers..."
+                  placeholder="Search posts or authors..."
                   value={search}
                   onChange={e => { setSearch(e.target.value); setPage(1); }}
                   icon={<Search className="w-4 h-4" />}
@@ -105,21 +93,9 @@ export default function EventsPage() {
                   ) : undefined}
                 />
               </div>
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={clsx(
-                  'flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium border transition-all duration-200',
-                  showFilters
-                    ? 'bg-[var(--primary)]/10 border-[var(--primary)]/40 text-[var(--primary)]'
-                    : 'bg-[var(--surface-2)] border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)]'
-                )}
-              >
-                <SlidersHorizontal className="w-4 h-4" />
-                <span className="hidden sm:inline">Filters</span>
-              </button>
             </div>
 
-            {/* Type filter pills */}
+            {/* Featured filter pills */}
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
               {FILTERS.map((f, i) => (
                 <motion.button
@@ -136,44 +112,30 @@ export default function EventsPage() {
                   <span>{f.icon}</span> {f.label}
                 </motion.button>
               ))}
-            </div>
 
-            {/* Category filters (collapsible) */}
-            <AnimatePresence>
-              {showFilters && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden"
+              {/* Category pills inline */}
+              <div className="w-px h-5 bg-[var(--border)] mx-1 flex-shrink-0" />
+              {CATEGORIES.map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => { setCategory(cat); setPage(1); }}
+                  className={clsx(
+                    'px-3 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-200 flex-shrink-0',
+                    category === cat
+                      ? 'bg-[var(--accent)]/15 text-[var(--accent)] border border-[var(--accent)]/30'
+                      : 'bg-[var(--surface-2)] text-[var(--muted)] border border-[var(--border)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)]'
+                  )}
                 >
-                  <div className="pt-4 border-t border-[var(--border)] mt-4">
-                    <p className="text-xs text-[var(--muted)] font-semibold mb-3 uppercase tracking-wider">Category</p>
-                    <div className="flex flex-wrap gap-2">
-                      {CATEGORIES.map((cat) => (
-                        <button
-                          key={cat}
-                          onClick={() => { setCategory(cat); setPage(1); }}
-                          className={clsx(
-                            'px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200',
-                            category === cat
-                              ? 'bg-[var(--accent)]/15 text-[var(--accent)] border border-[var(--accent)]/30'
-                              : 'bg-[var(--surface-2)] text-[var(--muted)] border border-[var(--border)] hover:border-[var(--accent)]/40'
-                          )}
-                        >
-                          {cat}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  {cat}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Events grid */}
+        {/* Blog grid */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
           {/* Results info */}
           <AnimatePresence mode="wait">
             {!loading && (
@@ -184,7 +146,7 @@ export default function EventsPage() {
                 className="flex items-center justify-between mb-6"
               >
                 <p className="text-[var(--muted)] text-sm">
-                  <span className="text-[var(--text)] font-semibold">{totalCount.toLocaleString()}</span> events found
+                  <span className="text-[var(--text)] font-semibold">{totalCount.toLocaleString()}</span> posts found
                   {search && <> for "<span className="text-[var(--primary)]">{search}</span>"</>}
                 </p>
                 {(search || filterIdx > 0 || category !== 'All') && (
@@ -201,16 +163,16 @@ export default function EventsPage() {
 
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Array.from({ length: 6 }).map((_, i) => <EventCardSkeleton key={i} />)}
+              {Array.from({ length: 6 }).map((_, i) => <BlogCardSkeleton key={i} />)}
             </div>
-          ) : events.length === 0 ? (
+          ) : blogs.length === 0 ? (
             <EmptyState
-              icon="🔍"
-              title="No events found"
-              description="Try adjusting your search or filters to discover more events."
+              icon="📝"
+              title="No posts found"
+              description="Try adjusting your search or filters to discover more posts."
               action={
                 <Button onClick={() => { setSearch(''); setFilterIdx(0); setCategory('All'); }}>
-                  <Zap className="w-4 h-4" /> Clear Filters
+                  <BookOpen className="w-4 h-4" /> Clear Filters
                 </Button>
               }
             />
@@ -222,8 +184,8 @@ export default function EventsPage() {
               transition={{ duration: 0.3 }}
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
             >
-              {events.map((event, i) => (
-                <EventCard key={event.id} event={event} index={i} />
+              {blogs.map((blog, i) => (
+                <BlogCard key={blog.id} blog={blog} index={i} />
               ))}
             </motion.div>
           )}
@@ -248,7 +210,8 @@ export default function EventsPage() {
                 .map((p, i) => p === '...' ? (
                   <span key={`dots-${i}`} className="text-[var(--muted)] px-1">…</span>
                 ) : (
-                  <button key={p}
+                  <button
+                    key={p}
                     onClick={() => setPage(p as number)}
                     className={clsx(
                       'w-9 h-9 rounded-xl text-sm font-medium transition-all duration-200',

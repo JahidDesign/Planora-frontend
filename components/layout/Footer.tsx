@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Zap, Twitter, Github, Linkedin, Mail, ArrowRight } from 'lucide-react';
-
+import Image from 'next/image';
 const footerLinks = {
   Product: [
     { label: 'Events', href: '/events' },
@@ -23,10 +23,10 @@ const footerLinks = {
 };
 
 const socials = [
-  { icon: Twitter, href: '#', label: 'Twitter' },
-  { icon: Github, href: '#', label: 'GitHub' },
-  { icon: Linkedin, href: '#', label: 'LinkedIn' },
-  { icon: Mail, href: 'mailto:hello@planora.dev', label: 'Email' },
+  { icon: Twitter, href: 'https://x.com/JahidHasanMERN', label: 'Twitter' },
+  { icon: Github, href: 'https://github.com/JahidDesign', label: 'GitHub' },
+  { icon: Linkedin, href: 'https://www.linkedin.com/in/jahidhasan-webdeveloper/', label: 'LinkedIn' },
+  { icon: Mail, href: 'mailto:jahidhasan.en@gmail.com', label: 'Email' },
 ];
 
 export default function Footer() {
@@ -36,26 +36,15 @@ export default function Footer() {
       <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-[var(--primary)] to-transparent opacity-60" />
 
       {/* Newsletter strip */}
-      <div className="border-b border-[var(--border)]">
+      {/* <div className="border-b border-[var(--border)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <div>
               <h3 className="font-display font-bold text-lg text-[var(--text)]">Stay in the loop</h3>
-              <p className="text-[var(--muted)] text-sm mt-1">Get weekly event recommendations straight to your inbox.</p>
-            </div>
-            <div className="flex gap-2 w-full sm:w-auto">
-              <input
-                type="email"
-                placeholder="you@example.com"
-                className="flex-1 sm:w-64 px-4 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)] placeholder-[var(--muted-2)] text-sm focus:outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]/30 transition-all"
-              />
-              <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white gradient-bg hover:opacity-90 transition-opacity flex-shrink-0">
-                Subscribe <ArrowRight className="w-3.5 h-3.5" />
-              </button>
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Main footer */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
@@ -63,10 +52,11 @@ export default function Footer() {
           {/* Brand */}
           <div className="md:col-span-2">
             <Link href="/" className="flex items-center gap-2.5 group w-fit mb-4">
-              <div className="w-9 h-9 rounded-xl gradient-bg flex items-center justify-center">
+              {/* <div className="w-9 h-9 rounded-xl gradient-bg flex items-center justify-center">
                 <Zap className="w-4 h-4 text-white" />
               </div>
-              <span className="font-display font-bold text-xl gradient-text">Planora</span>
+              <span className="font-display font-bold text-xl gradient-text">Planora</span> */}
+              <Image src="/planora.png" alt="Planora" width={180} height={40} />
             </Link>
             <p className="text-[var(--muted)] text-sm leading-relaxed max-w-xs">
               The modern event platform for creators who care about experience. Create, discover, and join events that matter.
@@ -78,12 +68,6 @@ export default function Footer() {
                   <Icon className="w-4 h-4" />
                 </a>
               ))}
-            </div>
-
-            {/* Status badge */}
-            <div className="mt-6 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--success)]/10 border border-[var(--success)]/20 text-[var(--success)] text-xs font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)] animate-pulse" />
-              All systems operational
             </div>
           </div>
 

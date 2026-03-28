@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Menu, X, Zap, ChevronDown, LogOut, Settings,
+  Menu, X, ChevronDown, LogOut, Settings,
   LayoutDashboard, Shield, Sun, Moon, Bell, Plus
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
@@ -13,11 +13,12 @@ import { useTheme } from '@/context/ThemeContext';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import { clsx } from 'clsx';
-
+import Image from 'next/image';
 const navLinks = [
   { href: '/', label: 'Home' },
   { href: '/events', label: 'Events' },
   { href: '/about', label: 'About Us' },
+  { href: '/blogs', label: 'Blog' },
   { href: '/contact', label: 'Contact' },
 ];
 
@@ -44,12 +45,12 @@ export default function Navbar() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      api.get('/invitations/my').then(r => setPendingCount(r.data.invitations?.length || 0)).catch(() => {});
+      api.get('/invitations/my').then(r => setPendingCount(r.data.invitations?.length || 0)).catch(() => { });
     }
   }, [isAuthenticated]);
 
   const handleLogout = async () => {
-    try { await api.post('/auth/logout'); } catch {}
+    try { await api.post('/auth/logout'); } catch { }
     logout();
     toast.success('Signed out');
     router.push('/');
@@ -65,7 +66,7 @@ export default function Navbar() {
       style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50 }}
       className={clsx(
         'transition-all duration-500',
-        scrolled ? 'glass shadow-lg' : 'bg-transparent'
+        scrolled ? 'glass shadow-sm' : 'bg-transparent'
       )}
     >
       {/* Top accent line */}
@@ -76,13 +77,14 @@ export default function Navbar() {
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="relative">
+            {/* <div className="relative">
               <div className="w-8 h-8 rounded-xl gradient-bg flex items-center justify-center glow-primary group-hover:scale-110 transition-transform duration-300">
                 <Zap className="w-4 h-4 text-white" />
               </div>
               <div className="absolute -inset-1 rounded-xl gradient-bg opacity-0 group-hover:opacity-30 blur-md transition-opacity duration-300" />
             </div>
-            <span className="font-display font-bold text-xl gradient-text">Planora</span>
+            <span className="font-display font-bold text-xl gradient-text">Planora</span> */}
+            <Image src="/Planora.png" alt="Planora" width={180} height={40} />
           </Link>
 
           {/* Desktop Nav */}
@@ -211,7 +213,6 @@ export default function Navbar() {
                 </Link>
                 <Link href="/auth/register"
                   className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white gradient-bg glow-primary hover:opacity-90 transition-all duration-200">
-                  <Zap className="w-3.5 h-3.5" />
                   Get Started
                 </Link>
               </>

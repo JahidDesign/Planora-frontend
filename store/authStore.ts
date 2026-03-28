@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import api from '@/lib/api';
 
 interface User {
   id: string;
@@ -9,6 +10,9 @@ interface User {
   avatar?: string;
   bio?: string;
   notificationsEnabled?: boolean;
+  plan?: 'FREE' | 'PRO' | 'ENTERPRISE';
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
 }
 
 interface AuthState {
@@ -20,11 +24,12 @@ interface AuthState {
   setAuth: (user: User, token: string) => void;
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
+  fetchUser: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       accessToken: null,
       isAuthenticated: false,
@@ -35,6 +40,17 @@ export const useAuthStore = create<AuthState>()(
       logout: () => set({ user: null, accessToken: null, isAuthenticated: false }),
       updateUser: (updates) =>
         set((state) => ({ user: state.user ? { ...state.user, ...updates } : null })),
+
+      // ✅ Fetches latest user from backend and updates store
+      fetchUser: async () => {
+        try {
+          const res = await api.get('/users/me');
+          const updatedUser = res.data.user;
+          set({ user: updatedUser, isAuthenticated: true });
+        } catch {
+          // silently fail — don't logout on network errors
+        }
+      },
     }),
     {
       name: 'planora-auth',

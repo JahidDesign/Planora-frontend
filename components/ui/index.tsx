@@ -19,10 +19,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variants: Record<string, string> = {
       primary: 'gradient-bg text-white shadow-[0_0_0_0_rgba(139,92,246,0)] hover:shadow-[0_0_20px_rgba(139,92,246,0.4)] hover:opacity-90',
-      accent:  'bg-[var(--accent)] hover:bg-[var(--accent-dk)] text-[var(--bg)] font-bold hover:shadow-[0_0_20px_rgba(34,211,238,0.35)]',
+      accent: 'bg-[var(--accent)] hover:bg-[var(--accent-dk)] text-[var(--bg)] font-bold hover:shadow-[0_0_20px_rgba(34,211,238,0.35)]',
       outline: 'border-2 border-[var(--primary)] text-[var(--primary)] bg-transparent hover:bg-[var(--primary)]/10',
-      ghost:   'text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] bg-transparent',
-      danger:  'bg-[var(--error)]/15 text-[var(--error)] border border-[var(--error)]/30 hover:bg-[var(--error)]/25',
+      ghost: 'text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] bg-transparent',
+      danger: 'bg-[var(--error)]/15 text-[var(--error)] border border-[var(--error)]/30 hover:bg-[var(--error)]/25',
     };
 
     const sizes: Record<string, string> = {
@@ -164,7 +164,24 @@ export function EventCardSkeleton() {
     </div>
   );
 }
+// components/ui/Skeletons.tsx (or wherever EventCardSkeleton is defined)
 
+export function BlogCardSkeleton() {
+  return (
+    <div className="card overflow-hidden animate-pulse">
+      <div className="h-48 bg-[var(--surface-2)]" />
+      <div className="p-5 space-y-3">
+        <div className="h-5 bg-[var(--surface-2)] rounded-lg w-3/4" />
+        <div className="h-4 bg-[var(--surface-2)] rounded-lg w-full" />
+        <div className="h-4 bg-[var(--surface-2)] rounded-lg w-2/3" />
+        <div className="pt-3 border-t border-[var(--border)] flex justify-between">
+          <div className="h-3 bg-[var(--surface-2)] rounded w-1/4" />
+          <div className="h-3 bg-[var(--surface-2)] rounded w-1/6" />
+        </div>
+      </div>
+    </div>
+  );
+}
 // ─── Modal ─────────────────────────────────────────────────────────────────────
 interface ModalProps {
   isOpen: boolean;
@@ -223,11 +240,11 @@ interface BadgeProps {
 export function Badge({ variant = 'primary', children, className }: BadgeProps) {
   const map: Record<string, string> = {
     primary: 'bg-[var(--primary)]/15 text-[var(--primary-lt)] border-[var(--primary)]/30',
-    accent:  'bg-[var(--accent)]/15 text-[var(--accent)] border-[var(--accent)]/30',
+    accent: 'bg-[var(--accent)]/15 text-[var(--accent)] border-[var(--accent)]/30',
     success: 'bg-[var(--success)]/15 text-[var(--success)] border-[var(--success)]/30',
     warning: 'bg-[var(--warning)]/15 text-[var(--warning)] border-[var(--warning)]/30',
-    error:   'bg-[var(--error)]/15 text-[var(--error)] border-[var(--error)]/30',
-    muted:   'bg-[var(--surface-2)] text-[var(--muted)] border-[var(--border)]',
+    error: 'bg-[var(--error)]/15 text-[var(--error)] border-[var(--error)]/30',
+    muted: 'bg-[var(--surface-2)] text-[var(--muted)] border-[var(--border)]',
   };
   return (
     <span className={clsx('badge', map[variant], className)}>{children}</span>

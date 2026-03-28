@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   Users, CalendarDays, DollarSign, TrendingUp,
-  Trash2, Search, Shield, Eye, Star
+  Trash2, Search, Shield, Eye, Star, BookOpen,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import Navbar from '@/components/layout/Navbar';
@@ -16,7 +16,7 @@ import toast from 'react-hot-toast';
 import Link from 'next/link';
 import { clsx } from 'clsx';
 
-type Tab = 'overview' | 'users' | 'events';
+type Tab = 'overview' | 'users' | 'events' | 'blogs';
 
 export default function AdminPage() {
   const { user, isAuthenticated } = useAuthStore();
@@ -26,10 +26,12 @@ export default function AdminPage() {
   const [stats, setStats] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
+  const [blogs, setBlogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
   const [deleteEventId, setDeleteEventId] = useState<string | null>(null);
+  const [deleteBlogId, setDeleteBlogId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) { router.push('/auth/login'); return; }
@@ -40,17 +42,24 @@ export default function AdminPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [statsRes, usersRes, eventsRes] = await Promise.all([
+      const [statsRes, usersRes, eventsRes, blogsRes] = await Promise.all([
         api.get('/admin/stats'),
         api.get('/admin/users'),
         api.get('/admin/events'),
+        api.get('/my-blogs?limit=100'),
       ]);
       setStats(statsRes.data);
       setUsers(usersRes.data.users || []);
       setEvents(eventsRes.data.events || []);
-    } catch { toast.error('Failed to load admin data'); }
-    finally { setLoading(false); }
+      setBlogs(blogsRes.data.blogs || []);
+    } catch {
+      toast.error('Failed to load admin data');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  // ── Handlers ───────────────────────────────────────────────────────────────
 
   const handleDeleteUser = async () => {
     try {
@@ -58,7 +67,9 @@ export default function AdminPage() {
       toast.success('User deleted');
       setDeleteUserId(null);
       setUsers(prev => prev.filter(u => u.id !== deleteUserId));
-    } catch (err: any) { toast.error(err.response?.data?.error || 'Failed'); }
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed');
+    }
   };
 
   const handleDeleteEvent = async () => {
@@ -67,7 +78,20 @@ export default function AdminPage() {
       toast.success('Event removed');
       setDeleteEventId(null);
       setEvents(prev => prev.filter(e => e.id !== deleteEventId));
-    } catch (err: any) { toast.error(err.response?.data?.error || 'Failed'); }
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed');
+    }
+  };
+
+  const handleDeleteBlog = async () => {
+    try {
+      await api.delete(`/my-blogs/${deleteBlogId}`);
+      toast.success('Blog post deleted');
+      setDeleteBlogId(null);
+      setBlogs(prev => prev.filter(b => b.id !== deleteBlogId));
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to delete');
+    }
   };
 
   const handleSetFeatured = async (eventId: string) => {
@@ -75,7 +99,19 @@ export default function AdminPage() {
       await api.patch(`/admin/events/${eventId}/feature`);
       toast.success('Featured event updated!');
       fetchData();
-    } catch { toast.error('Failed'); }
+    } catch {
+      toast.error('Failed');
+    }
+  };
+
+  const handleSetBlogFeatured = async (id: string, current: boolean) => {
+    try {
+      await api.patch(`/my-blogs/${id}/featured`, { isFeatured: !current });
+      toast.success(!current ? '⭐ Set as featured' : 'Removed from featured');
+      setBlogs(prev => prev.map(b => b.id === id ? { ...b, isFeatured: !current } : b));
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed');
+    }
   };
 
   const handleRoleUpdate = async (userId: string, role: string) => {
@@ -83,8 +119,12 @@ export default function AdminPage() {
       await api.patch(`/admin/users/${userId}/role`, { role });
       toast.success('Role updated');
       setUsers(prev => prev.map(u => u.id === userId ? { ...u, role } : u));
-    } catch { toast.error('Failed'); }
+    } catch {
+      toast.error('Failed');
+    }
   };
+
+  // ── Filtered lists ─────────────────────────────────────────────────────────
 
   const filteredUsers = users.filter(u =>
     u.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -92,8 +132,17 @@ export default function AdminPage() {
   );
 
   const filteredEvents = events.filter(e =>
-    e.title.toLowerCase().includes(search.toLowerCase())
+    e.title.toLowerCase().includes(search.toLowerCase()) ||
+    e.organizer?.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  const filteredBlogs = blogs.filter(b =>
+    b.title.toLowerCase().includes(search.toLowerCase()) ||
+    b.author?.name.toLowerCase().includes(search.toLowerCase()) ||
+    b.category?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  // ── Stat cards ─────────────────────────────────────────────────────────────
 
   const statCards = stats ? [
     { label: 'Total Users', value: stats.stats.totalUsers, icon: Users, color: 'text-primary', bg: 'bg-primary/10' },
@@ -108,6 +157,7 @@ export default function AdminPage() {
     <>
       <Navbar />
       <div className="min-h-screen pt-16 bg-background">
+
         {/* Header */}
         <div className="bg-surface border-b border-border relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-mesh opacity-40 pointer-events-none" />
@@ -123,6 +173,7 @@ export default function AdminPage() {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
           {/* Stat cards */}
           {loading ? (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -152,13 +203,15 @@ export default function AdminPage() {
 
           {/* Tabs */}
           <div className="flex gap-1 mb-6 bg-surface p-1 rounded-xl border border-border w-fit">
-            {(['overview', 'users', 'events'] as Tab[]).map(t => (
+            {(['overview', 'users', 'events', 'blogs'] as Tab[]).map(t => (
               <button
                 key={t}
-                onClick={() => setTab(t)}
+                onClick={() => { setTab(t); setSearch(''); }}
                 className={clsx(
                   'px-5 py-2.5 rounded-lg text-sm font-medium capitalize transition-all duration-200',
-                  tab === t ? 'bg-primary text-white shadow-glow-sm' : 'text-muted hover:text-text'
+                  tab === t
+                    ? 'bg-primary text-white shadow-glow-sm'
+                    : 'text-muted hover:text-text'
                 )}
               >
                 {t}
@@ -178,7 +231,7 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* Overview Tab */}
+          {/* ── Overview Tab ── */}
           {tab === 'overview' && !loading && stats && (
             <div className="grid lg:grid-cols-2 gap-6">
               {/* Recent Users */}
@@ -194,11 +247,15 @@ export default function AdminPage() {
                         <p className="text-text text-sm font-medium truncate">{u.name}</p>
                         <p className="text-muted text-xs truncate">{u.email}</p>
                       </div>
-                      <span className={u.role === 'ADMIN' ? 'badge-private' : 'badge-public text-xs'}>{u.role}</span>
+                      <span className={u.role === 'ADMIN' ? 'badge-private' : 'badge-public text-xs'}>
+                        {u.role}
+                      </span>
                     </div>
                   ))}
                 </div>
-                <button onClick={() => setTab('users')} className="mt-4 text-primary text-sm hover:underline">View all users →</button>
+                <button onClick={() => setTab('users')} className="mt-4 text-primary text-sm hover:underline">
+                  View all users →
+                </button>
               </div>
 
               {/* Recent Events */}
@@ -219,15 +276,22 @@ export default function AdminPage() {
                     </div>
                   ))}
                 </div>
-                <button onClick={() => setTab('events')} className="mt-4 text-primary text-sm hover:underline">View all events →</button>
+                <button onClick={() => setTab('events')} className="mt-4 text-primary text-sm hover:underline">
+                  View all events →
+                </button>
               </div>
             </div>
           )}
 
-          {/* Users Tab */}
+          {/* ── Users Tab ── */}
           {tab === 'users' && (
             <div className="space-y-3">
-              {filteredUsers.map((u, i) => (
+              {filteredUsers.length === 0 ? (
+                <div className="card p-16 text-center">
+                  <Users className="w-12 h-12 mx-auto mb-4 text-muted opacity-30" />
+                  <p className="text-muted">No users found</p>
+                </div>
+              ) : filteredUsers.map((u, i) => (
                 <motion.div
                   key={u.id}
                   initial={{ opacity: 0, y: 5 }}
@@ -236,7 +300,9 @@ export default function AdminPage() {
                   className="card p-4 flex items-center gap-4"
                 >
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
-                    {u.avatar ? <img src={u.avatar} className="w-full h-full rounded-full object-cover" /> : u.name.charAt(0)}
+                    {u.avatar
+                      ? <img src={u.avatar} className="w-full h-full rounded-full object-cover" />
+                      : u.name.charAt(0)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-text text-sm font-semibold">{u.name}</p>
@@ -272,10 +338,15 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* Events Tab */}
+          {/* ── Events Tab ── */}
           {tab === 'events' && (
             <div className="space-y-3">
-              {filteredEvents.map((e, i) => (
+              {filteredEvents.length === 0 ? (
+                <div className="card p-16 text-center">
+                  <CalendarDays className="w-12 h-12 mx-auto mb-4 text-muted opacity-30" />
+                  <p className="text-muted">No events found</p>
+                </div>
+              ) : filteredEvents.map((e, i) => (
                 <motion.div
                   key={e.id}
                   initial={{ opacity: 0, y: 5 }}
@@ -295,21 +366,22 @@ export default function AdminPage() {
                       <p className="text-text text-sm font-semibold truncate">{e.title}</p>
                       {e.isFeatured && <span className="badge-paid text-xs">⭐ Featured</span>}
                     </div>
-                    <p className="text-muted text-xs mt-0.5">by {e.organizer.name} · {format(new Date(e.date), 'MMM d, yyyy')}</p>
+                    <p className="text-muted text-xs mt-0.5">
+                      by {e.organizer.name} · {format(new Date(e.date), 'MMM d, yyyy')}
+                    </p>
                     <div className="flex items-center gap-2 mt-1">
                       <span className={e.type === 'PRIVATE' ? 'badge-private' : 'badge-public'}>{e.type}</span>
                       <span className={e.fee > 0 ? 'badge-paid' : 'badge-free'}>{e.fee > 0 ? `$${e.fee}` : 'Free'}</span>
                       <span className="text-muted text-xs">{e._count.participants} participants</span>
-                      {e.isDeleted && <span className="badge-rejected">Deleted</span>}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <button
                       onClick={() => handleSetFeatured(e.id)}
                       className="w-8 h-8 rounded-lg flex items-center justify-center text-muted hover:text-warning hover:bg-warning/10 transition-colors"
-                      title="Set as featured"
+                      title="Toggle featured"
                     >
-                      <Star className="w-4 h-4" />
+                      <Star className={`w-4 h-4 ${e.isFeatured ? 'text-warning fill-warning' : ''}`} />
                     </button>
                     <Link href={`/events/${e.id}`}>
                       <button className="w-8 h-8 rounded-lg flex items-center justify-center text-muted hover:text-accent transition-colors">
@@ -327,24 +399,120 @@ export default function AdminPage() {
               ))}
             </div>
           )}
+
+          {/* ── Blogs Tab ── */}
+          {tab === 'blogs' && (
+            <div className="space-y-3">
+              {filteredBlogs.length === 0 ? (
+                <div className="card p-16 text-center">
+                  <BookOpen className="w-12 h-12 mx-auto mb-4 text-muted opacity-30" />
+                  <p className="text-muted">No blog posts found</p>
+                </div>
+              ) : filteredBlogs.map((b, i) => (
+                <motion.div
+                  key={b.id}
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.03 }}
+                  className="card p-4 flex items-center gap-4"
+                >
+                  {/* Thumbnail */}
+                  {b.imageUrl ? (
+                    <img src={b.imageUrl} className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />
+                  ) : (
+                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center flex-shrink-0">
+                      <BookOpen className="w-6 h-6 text-primary" />
+                    </div>
+                  )}
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-text text-sm font-semibold truncate">{b.title}</p>
+                      {b.isFeatured && <span className="badge-paid text-xs">⭐ Featured</span>}
+                    </div>
+                    <p className="text-muted text-xs mt-0.5">
+                      by {b.author.name} · {format(new Date(b.publishedAt || b.createdAt), 'MMM d, yyyy')}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      {b.category && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-accent/15 text-accent border border-accent/30">
+                          {b.category}
+                        </span>
+                      )}
+                      <span className={b.isPublished ? 'badge-public' : 'badge-private'}>
+                        {b.isPublished ? 'Published' : 'Draft'}
+                      </span>
+                      {b.tags?.slice(0, 2).map((tag: string) => (
+                        <span key={tag} className="text-muted text-xs">#{tag}</span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <button
+                      onClick={() => handleSetBlogFeatured(b.id, b.isFeatured)}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-muted hover:text-warning hover:bg-warning/10 transition-colors"
+                      title={b.isFeatured ? 'Remove featured' : 'Set as featured'}
+                    >
+                      <Star className={`w-4 h-4 ${b.isFeatured ? 'text-warning fill-warning' : ''}`} />
+                    </button>
+                    <Link href={`/blogs/${b.slug}`}>
+                      <button className="w-8 h-8 rounded-lg flex items-center justify-center text-muted hover:text-accent transition-colors">
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    </Link>
+                    <button
+                      onClick={() => setDeleteBlogId(b.id)}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-muted hover:text-error hover:bg-error/10 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Delete User Modal */}
+      {/* ── Delete User Modal ── */}
       <Modal isOpen={!!deleteUserId} onClose={() => setDeleteUserId(null)} title="Delete User Account">
-        <p className="text-muted mb-6">This will permanently delete the user and all their data. This cannot be undone.</p>
+        <p className="text-muted mb-6">
+          This will permanently delete the user and all their data. This cannot be undone.
+        </p>
         <div className="flex gap-3">
           <Button variant="ghost" onClick={() => setDeleteUserId(null)} className="flex-1">Cancel</Button>
-          <Button variant="danger" onClick={handleDeleteUser} className="flex-1" icon={<Trash2 className="w-4 h-4" />}>Delete User</Button>
+          <Button variant="danger" onClick={handleDeleteUser} className="flex-1" icon={<Trash2 className="w-4 h-4" />}>
+            Delete User
+          </Button>
         </div>
       </Modal>
 
-      {/* Delete Event Modal */}
+      {/* ── Delete Event Modal ── */}
       <Modal isOpen={!!deleteEventId} onClose={() => setDeleteEventId(null)} title="Remove Event">
-        <p className="text-muted mb-6">This event will be removed from the platform. Organizer will be notified.</p>
+        <p className="text-muted mb-6">
+          This event will be removed from the platform. Organizer will be notified.
+        </p>
         <div className="flex gap-3">
           <Button variant="ghost" onClick={() => setDeleteEventId(null)} className="flex-1">Cancel</Button>
-          <Button variant="danger" onClick={handleDeleteEvent} className="flex-1" icon={<Trash2 className="w-4 h-4" />}>Remove Event</Button>
+          <Button variant="danger" onClick={handleDeleteEvent} className="flex-1" icon={<Trash2 className="w-4 h-4" />}>
+            Remove Event
+          </Button>
+        </div>
+      </Modal>
+
+      {/* ── Delete Blog Modal ── */}
+      <Modal isOpen={!!deleteBlogId} onClose={() => setDeleteBlogId(null)} title="Delete Blog Post">
+        <p className="text-muted mb-6">
+          Are you sure you want to delete this blog post? This action cannot be undone.
+        </p>
+        <div className="flex gap-3">
+          <Button variant="ghost" onClick={() => setDeleteBlogId(null)} className="flex-1">Cancel</Button>
+          <Button variant="danger" onClick={handleDeleteBlog} className="flex-1" icon={<Trash2 className="w-4 h-4" />}>
+            Delete Post
+          </Button>
         </div>
       </Modal>
     </>
