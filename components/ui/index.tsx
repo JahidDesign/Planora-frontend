@@ -120,7 +120,6 @@ interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
   error?: string;
 }
-
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
   ({ label, error, className, children, ...props }, ref) => (
     <div className="w-full">
