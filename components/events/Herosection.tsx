@@ -224,7 +224,7 @@ export default function HeroSection() {
               >
                 <span className="text-[var(--text)]">Where</span>
                 <br />
-                <TypewriterText words={['Ideas Meet', 'People Connect', 'Magic Happens', 'Events Live']} />
+                <TypewriterText words={['Ideas Meet', 'People Connect', 'Magic Happens', 'Events Live', 'Blog ']} />
                 <br />
                 <span className="text-[var(--text)]">In Real Time</span>
               </motion.h1>
