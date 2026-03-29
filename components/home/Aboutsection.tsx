@@ -357,9 +357,7 @@ export default function AboutSection() {
             </Link>
           </div>
         </motion.div>
-
       </div>
-
       {/* Bottom gradient fade — same as hero */}
       <div className="absolute bottom-0 inset-x-0 h-24 bg-gradient-to-t from-[var(--bg)] to-transparent pointer-events-none" />
     </section>
