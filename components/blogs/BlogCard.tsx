@@ -131,7 +131,7 @@ export default function BlogCard({ blog, index = 0 }: Props) {
                 <span>{blog.category || 'General'}</span>
               </div>
               <div className="flex items-center gap-1 text-[var(--primary)] text-sm font-medium">
-                <span className="group-hover:opacity-100 opacity-80 transition-opacity">Read</span>
+                <span className="group-hover:opacity-100 opacity-80 transition-opacity"> Read</span>
                 <ArrowRight className="w-3.5 h-3.5 translate-x-0 group-hover:translate-x-1 transition-transform duration-200" />
               </div>
             </div>
