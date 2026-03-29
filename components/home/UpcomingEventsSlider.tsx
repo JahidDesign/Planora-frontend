@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Flame } from 'lucide-react';
 import EventCard from '@/components/events/EventCard';
 import api from '@/lib/api';
@@ -80,10 +80,7 @@ export default function UpcomingEventsSlider() {
   }, [prev, next]);
 
   const showNav = !loading && events.length > visible;
-
-  // Each card width as percentage of the track
   const cardWidthPct = visible > 0 ? 100 / visible : 100;
-  // Track offset in %  (relative to one card width unit)
   const offsetPct = -(current * cardWidthPct);
 
   return (
@@ -116,8 +113,16 @@ export default function UpcomingEventsSlider() {
           )}
         </div>
 
-        {/* ── Carousel Track ── */}
-        <div className="overflow-hidden" onTouchStart={touchStartX}>
+        {/* ── Carousel Track ──
+            On mobile: negative margin breaks out of the section's px-4 so the
+            card fills edge-to-edge, then px-4 re-adds inner breathing room.
+            pb-2 gives card shadows room so they're not clipped at the bottom.
+            On sm+: reset to normal flow (mx-0 px-0 pb-0).
+        ── */}
+        <div
+          className="overflow-hidden -mx-4 px-4 pb-3 sm:mx-0 sm:px-0 sm:pb-0"
+          onTouchStart={touchStartX}
+        >
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {Array.from({ length: visible }).map((_, i) => (
@@ -133,14 +138,11 @@ export default function UpcomingEventsSlider() {
               className="flex gap-4 sm:gap-6"
               animate={{ x: `${offsetPct}%` }}
               transition={{ type: 'spring', stiffness: 300, damping: 34, mass: 0.8 }}
-              // Track is wide enough to hold all cards at full card-width each
               style={{ width: `${(events.length / visible) * 100}%` }}
             >
               {events.map((e, i) => (
                 <div
                   key={e.id}
-                  // Each card occupies 1/events.length of the track width,
-                  // which equals 1/visible of the viewport window — correct!
                   style={{ width: `${100 / events.length}%` }}
                   className="min-w-0"
                 >
@@ -153,14 +155,14 @@ export default function UpcomingEventsSlider() {
 
         {/* ── Bottom Controls ── */}
         {showNav && (
-          <div className="flex items-center justify-between mt-6 sm:mt-8">
+          <div className="flex items-center justify-between mt-5 sm:mt-8">
             {/* Mobile-only arrow row */}
             <div className="flex sm:hidden items-center gap-2">
               <NavButton onClick={prev} disabled={current === 0} direction="left" />
               <NavButton onClick={next} disabled={current === maxIndex} direction="right" />
             </div>
 
-            {/* Dot indicators — centred on desktop, right-aligned on mobile */}
+            {/* Dot indicators */}
             <div className="flex items-center gap-1.5 mx-auto sm:mx-0 sm:flex-1 sm:justify-center">
               {Array.from({ length: maxIndex + 1 }, (_, i) => (
                 <button
