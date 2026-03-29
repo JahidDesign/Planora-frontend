@@ -16,7 +16,6 @@ import { useAuthStore } from '@/store/authStore';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
-import { loadStripe } from '@stripe/stripe-js';
 
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -66,7 +65,7 @@ export default function EventDetailPage() {
     try {
       const res = await api.get(`/events/${id}/participants`);
       setParticipants(res.data.participants || []);
-    } catch {}
+    } catch { }
   };
 
   const isOwner = event && user && event.organizer.id === user.id;
@@ -82,13 +81,19 @@ export default function EventDetailPage() {
     setActionLoading(true);
     try {
       if (event.fee > 0) {
-        // Redirect to Stripe checkout
+        // Modern Stripe SDK: server returns session.url — redirect directly.
+        // stripe.redirectToCheckout({ sessionId }) was removed in @stripe/stripe-js v2+.
         const res = await api.post('/payments/create-session', { eventId: id });
-        const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
-        await stripe?.redirectToCheckout({ sessionId: res.data.sessionId });
+        const checkoutUrl: string | undefined = res.data?.url;
+        if (!checkoutUrl) throw new Error('No checkout URL returned from server.');
+        window.location.href = checkoutUrl;
       } else {
         await api.post(`/participants/join/${id}`);
-        toast.success(event.type === 'PUBLIC' ? '🎉 Joined successfully!' : 'Request sent! Awaiting approval.');
+        toast.success(
+          event.type === 'PUBLIC'
+            ? '🎉 Joined successfully!'
+            : 'Request sent! Awaiting approval.'
+        );
         fetchEvent();
       }
     } catch (err: any) {
@@ -108,7 +113,10 @@ export default function EventDetailPage() {
     }
   };
 
-  const handleParticipantAction = async (participantId: string, action: 'approve' | 'reject' | 'ban') => {
+  const handleParticipantAction = async (
+    participantId: string,
+    action: 'approve' | 'reject' | 'ban'
+  ) => {
     try {
       await api.patch(`/participants/${participantId}/${action}`);
       toast.success(`Participant ${action}d`);
@@ -155,20 +163,29 @@ export default function EventDetailPage() {
       if (!isPaid && isPrivate) label = 'Request to Join';
       if (isPaid && isPrivate) label = `Pay & Request — $${event.fee}`;
       return (
-        <Button onClick={handleJoin} loading={actionLoading} size="lg" className="w-full"
-          icon={isPaid ? <CreditCard className="w-4 h-4" /> : undefined}>
+        <Button
+          onClick={handleJoin}
+          loading={actionLoading}
+          size="lg"
+          className="w-full"
+          icon={isPaid ? <CreditCard className="w-4 h-4" /> : undefined}
+        >
           {label}
         </Button>
       );
     }
     const statusMap: Record<string, { label: string; variant: any }> = {
       PENDING: { label: '⏳ Pending Approval', variant: 'outline' },
-      APPROVED: { label: '✅ You\'re In!', variant: 'outline' },
+      APPROVED: { label: "✅ You're In!", variant: 'outline' },
       REJECTED: { label: '❌ Request Rejected', variant: 'danger' },
-      BANNED: { label: '🚫 You\'ve Been Banned', variant: 'danger' },
+      BANNED: { label: "🚫 You've Been Banned", variant: 'danger' },
     };
     const s = statusMap[userParticipation.status];
-    return <Button variant={s.variant} size="lg" className="w-full" disabled>{s.label}</Button>;
+    return (
+      <Button variant={s.variant} size="lg" className="w-full" disabled>
+        {s.label}
+      </Button>
+    );
   };
 
   if (loading) return (
@@ -209,7 +226,9 @@ export default function EventDetailPage() {
           {/* Badges overlay */}
           <div className="absolute bottom-6 left-6 flex items-center gap-2 flex-wrap">
             <span className={event.type === 'PRIVATE' ? 'badge-private' : 'badge-public'}>
-              {event.type === 'PRIVATE' ? <Lock className="w-3 h-3 inline mr-1" /> : <Globe className="w-3 h-3 inline mr-1" />}
+              {event.type === 'PRIVATE'
+                ? <Lock className="w-3 h-3 inline mr-1" />
+                : <Globe className="w-3 h-3 inline mr-1" />}
               {event.type}
             </span>
             <span className={event.fee > 0 ? 'badge-paid' : 'badge-free'}>
@@ -262,16 +281,24 @@ export default function EventDetailPage() {
                 </div>
 
                 {event.eventLink && (
-                  <a href={event.eventLink} target="_blank" rel="noopener noreferrer"
-                    className="mt-3 flex items-center gap-2 text-accent text-sm hover:underline">
+                  <a
+                    href={event.eventLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 flex items-center gap-2 text-accent text-sm hover:underline"
+                  >
                     <LinkIcon className="w-4 h-4" /> {event.eventLink}
                   </a>
                 )}
               </motion.div>
 
               {/* Description */}
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                className="bg-surface border border-border rounded-2xl p-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="bg-surface border border-border rounded-2xl p-6"
+              >
                 <h2 className="font-display text-xl font-semibold text-text mb-4">About This Event</h2>
                 <p className="text-muted leading-relaxed whitespace-pre-wrap">{event.description}</p>
               </motion.div>
@@ -285,8 +312,11 @@ export default function EventDetailPage() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {event.participants.slice(0, 8).map((p: any) => (
-                      <div key={p.id} title={p.user.name}
-                        className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-sm font-bold text-white border-2 border-surface">
+                      <div
+                        key={p.id}
+                        title={p.user.name}
+                        className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-sm font-bold text-white border-2 border-surface"
+                      >
                         {p.user.avatar
                           ? <img src={p.user.avatar} alt={p.user.name} className="w-full h-full rounded-full object-cover" />
                           : p.user.name.charAt(0)}
@@ -308,8 +338,12 @@ export default function EventDetailPage() {
                     Reviews <span className="text-muted text-base font-normal">({reviews.length})</span>
                   </h2>
                   {isAuthenticated && isPast && userParticipation?.status === 'APPROVED' && (
-                    <Button size="sm" variant="outline" icon={<Star className="w-3.5 h-3.5" />}
-                      onClick={() => setShowReviewModal(true)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      icon={<Star className="w-3.5 h-3.5" />}
+                      onClick={() => setShowReviewModal(true)}
+                    >
                       Write Review
                     </Button>
                   )}
@@ -346,16 +380,13 @@ export default function EventDetailPage() {
 
             {/* Sidebar */}
             <div className="space-y-4">
-              {/* Join Card */}
               <div className="bg-surface border border-border rounded-2xl p-6 sticky top-24">
                 <div className="mb-5">
                   <p className="text-muted text-sm">Registration Fee</p>
                   <p className="font-display text-3xl font-bold mt-1">
-                    {event.fee > 0 ? (
-                      <span className="gradient-text">${event.fee}</span>
-                    ) : (
-                      <span className="text-success">Free</span>
-                    )}
+                    {event.fee > 0
+                      ? <span className="gradient-text">${event.fee}</span>
+                      : <span className="text-success">Free</span>}
                   </p>
                 </div>
 
@@ -375,16 +406,31 @@ export default function EventDetailPage() {
                         Edit Event
                       </Button>
                     </Link>
-                    <Button variant="outline" size="sm" className="w-full" icon={<Users className="w-4 h-4" />}
-                      onClick={() => { fetchParticipants(); setShowParticipantsModal(true); }}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      icon={<Users className="w-4 h-4" />}
+                      onClick={() => { fetchParticipants(); setShowParticipantsModal(true); }}
+                    >
                       Manage Participants
                     </Button>
-                    <Button variant="ghost" size="sm" className="w-full" icon={<Send className="w-4 h-4" />}
-                      onClick={() => setShowInviteModal(true)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full"
+                      icon={<Send className="w-4 h-4" />}
+                      onClick={() => setShowInviteModal(true)}
+                    >
                       Send Invitations
                     </Button>
-                    <Button variant="danger" size="sm" className="w-full" icon={<Trash2 className="w-4 h-4" />}
-                      onClick={() => setShowDeleteModal(true)}>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      className="w-full"
+                      icon={<Trash2 className="w-4 h-4" />}
+                      onClick={() => setShowDeleteModal(true)}
+                    >
                       Delete Event
                     </Button>
                   </div>
@@ -393,8 +439,13 @@ export default function EventDetailPage() {
                 {isAdmin && !isOwner && (
                   <div className="mt-4 pt-4 border-t border-border space-y-2">
                     <p className="text-xs text-primary font-medium uppercase tracking-wider">Admin Controls</p>
-                    <Button variant="danger" size="sm" className="w-full" icon={<Trash2 className="w-4 h-4" />}
-                      onClick={() => setShowDeleteModal(true)}>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      className="w-full"
+                      icon={<Trash2 className="w-4 h-4" />}
+                      onClick={() => setShowDeleteModal(true)}
+                    >
                       Remove Event
                     </Button>
                   </div>
@@ -408,7 +459,11 @@ export default function EventDetailPage() {
 
       {/* Delete Modal */}
       <Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} title="Delete Event">
-        <p className="text-muted mb-6">Are you sure you want to delete <strong className="text-text">"{event?.title}"</strong>? This action cannot be undone.</p>
+        <p className="text-muted mb-6">
+          Are you sure you want to delete{' '}
+          <strong className="text-text">"{event?.title}"</strong>?
+          This action cannot be undone.
+        </p>
         <div className="flex gap-3">
           <Button variant="ghost" onClick={() => setShowDeleteModal(false)} className="flex-1">Cancel</Button>
           <Button variant="danger" onClick={handleDelete} className="flex-1" icon={<Trash2 className="w-4 h-4" />}>
@@ -424,8 +479,13 @@ export default function EventDetailPage() {
             <p className="text-sm text-muted mb-2">Your Rating</p>
             <StarRating rating={rating} onRate={setRating} interactive />
           </div>
-          <Textarea label="Your Review" value={comment} onChange={e => setComment(e.target.value)}
-            rows={4} placeholder="Share your experience..." />
+          <Textarea
+            label="Your Review"
+            value={comment}
+            onChange={e => setComment(e.target.value)}
+            rows={4}
+            placeholder="Share your experience..."
+          />
           <div className="flex gap-3">
             <Button variant="ghost" onClick={() => setShowReviewModal(false)} className="flex-1">Cancel</Button>
             <Button onClick={handleSubmitReview} className="flex-1" disabled={!comment.trim()}>
@@ -436,8 +496,12 @@ export default function EventDetailPage() {
       </Modal>
 
       {/* Participants Modal */}
-      <Modal isOpen={showParticipantsModal} onClose={() => setShowParticipantsModal(false)}
-        title="Manage Participants" maxWidth="max-w-2xl">
+      <Modal
+        isOpen={showParticipantsModal}
+        onClose={() => setShowParticipantsModal(false)}
+        title="Manage Participants"
+        maxWidth="max-w-2xl"
+      >
         <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
           {participants.length === 0 ? (
             <p className="text-center text-muted py-8">No participants yet</p>
@@ -456,19 +520,25 @@ export default function EventDetailPage() {
                 <span className={`badge-${p.status.toLowerCase()}`}>{p.status}</span>
                 {p.status === 'PENDING' && (
                   <>
-                    <button onClick={() => handleParticipantAction(p.id, 'approve')}
-                      className="w-8 h-8 rounded-lg bg-success/20 text-success hover:bg-success/30 flex items-center justify-center transition-colors">
+                    <button
+                      onClick={() => handleParticipantAction(p.id, 'approve')}
+                      className="w-8 h-8 rounded-lg bg-success/20 text-success hover:bg-success/30 flex items-center justify-center transition-colors"
+                    >
                       <UserCheck className="w-4 h-4" />
                     </button>
-                    <button onClick={() => handleParticipantAction(p.id, 'reject')}
-                      className="w-8 h-8 rounded-lg bg-error/20 text-error hover:bg-error/30 flex items-center justify-center transition-colors">
+                    <button
+                      onClick={() => handleParticipantAction(p.id, 'reject')}
+                      className="w-8 h-8 rounded-lg bg-error/20 text-error hover:bg-error/30 flex items-center justify-center transition-colors"
+                    >
                       <UserX className="w-4 h-4" />
                     </button>
                   </>
                 )}
                 {p.status === 'APPROVED' && (
-                  <button onClick={() => handleParticipantAction(p.id, 'ban')}
-                    className="w-8 h-8 rounded-lg bg-red-900/30 text-red-400 hover:bg-red-900/50 flex items-center justify-center transition-colors">
+                  <button
+                    onClick={() => handleParticipantAction(p.id, 'ban')}
+                    className="w-8 h-8 rounded-lg bg-red-900/30 text-red-400 hover:bg-red-900/50 flex items-center justify-center transition-colors"
+                  >
                     <Ban className="w-4 h-4" />
                   </button>
                 )}
@@ -491,7 +561,12 @@ export default function EventDetailPage() {
           />
           <div className="flex gap-3">
             <Button variant="ghost" onClick={() => setShowInviteModal(false)} className="flex-1">Cancel</Button>
-            <Button onClick={handleInvite} className="flex-1" disabled={!inviteEmail} icon={<Send className="w-4 h-4" />}>
+            <Button
+              onClick={handleInvite}
+              className="flex-1"
+              disabled={!inviteEmail}
+              icon={<Send className="w-4 h-4" />}
+            >
               Send Invite
             </Button>
           </div>

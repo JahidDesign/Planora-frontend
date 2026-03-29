@@ -2,12 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Calendar, MapPin, CreditCard, Check, X, Clock } from 'lucide-react';
+import { Mail, Calendar, MapPin, CreditCard, Check, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button, EmptyState, Skeleton } from '@/components/ui';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
-import { loadStripe } from '@stripe/stripe-js';
 
 export default function InvitationsPage() {
   const [invitations, setInvitations] = useState<any[]>([]);
@@ -17,7 +16,7 @@ export default function InvitationsPage() {
   useEffect(() => {
     api.get('/invitations/my')
       .then(res => setInvitations(res.data.invitations || []))
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
 
@@ -25,12 +24,16 @@ export default function InvitationsPage() {
     setActionId(inv.id);
     try {
       if (inv.event.fee > 0) {
+        // Modern Stripe SDK: server returns session.url — redirect directly.
+        // stripe.redirectToCheckout({ sessionId }) was removed in @stripe/stripe-js v2+.
         const res = await api.post('/payments/create-session', {
           eventId: inv.event.id,
           invitationId: inv.id,
         });
-        const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
-        await stripe?.redirectToCheckout({ sessionId: res.data.sessionId });
+
+        const checkoutUrl: string | undefined = res.data?.url;
+        if (!checkoutUrl) throw new Error('No checkout URL returned from server.');
+        window.location.href = checkoutUrl;
       } else {
         await api.patch(`/invitations/${inv.id}/accept`);
         toast.success('Invitation accepted!');
@@ -84,7 +87,11 @@ export default function InvitationsPage() {
               className="card p-5 flex items-center gap-5"
             >
               {inv.event.imageUrl ? (
-                <img src={inv.event.imageUrl} alt={inv.event.title} className="w-16 h-16 rounded-xl object-cover flex-shrink-0" />
+                <img
+                  src={inv.event.imageUrl}
+                  alt={inv.event.title}
+                  className="w-16 h-16 rounded-xl object-cover flex-shrink-0"
+                />
               ) : (
                 <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-primary/30 to-accent/30 flex items-center justify-center flex-shrink-0">
                   <Mail className="w-7 h-7 text-primary" />
@@ -93,9 +100,13 @@ export default function InvitationsPage() {
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-display font-semibold text-text truncate">{inv.event.title}</h3>
-                  {inv.event.fee > 0 && <span className="badge-paid">${inv.event.fee}</span>}
-                  {inv.event.fee === 0 && <span className="badge-free">Free</span>}
+                  <h3 className="font-display font-semibold text-text truncate">
+                    {inv.event.title}
+                  </h3>
+                  {inv.event.fee > 0
+                    ? <span className="badge-paid">${inv.event.fee}</span>
+                    : <span className="badge-free">Free</span>
+                  }
                 </div>
                 <p className="text-muted text-xs">
                   Invited by <span className="text-text font-medium">{inv.sender.name}</span>
@@ -119,7 +130,11 @@ export default function InvitationsPage() {
                   size="sm"
                   onClick={() => handleAccept(inv)}
                   loading={actionId === inv.id}
-                  icon={inv.event.fee > 0 ? <CreditCard className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />}
+                  icon={
+                    inv.event.fee > 0
+                      ? <CreditCard className="w-3.5 h-3.5" />
+                      : <Check className="w-3.5 h-3.5" />
+                  }
                 >
                   {inv.event.fee > 0 ? 'Pay & Accept' : 'Accept'}
                 </Button>
