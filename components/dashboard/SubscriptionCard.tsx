@@ -125,6 +125,7 @@ export default function SubscriptionCard() {
               animate={{ opacity: 1, height: 'auto' }}
               className="bg-[var(--error)]/10 border border-[var(--error)]/20 rounded-xl p-4"
             >
+              
               <div className="flex items-start gap-2 mb-3">
                 <AlertCircle className="w-4 h-4 text-[var(--error)] flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-[var(--muted)] leading-relaxed">
