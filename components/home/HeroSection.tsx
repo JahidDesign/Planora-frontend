@@ -115,7 +115,6 @@ function TypewriterText({ words }: { words: string[] }) {
     </span>
   );
 }
-
 // Stats with animated counter
 function StatItem({ value, suffix, label, icon: Icon, delay }: any) {
   const { ref, inView } = useInView(0.3);
