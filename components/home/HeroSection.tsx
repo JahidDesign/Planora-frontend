@@ -186,7 +186,7 @@ export default function HeroSection() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.7, delay: 0.1, ease: [0.16,1,0.3,1] }}
-                className="font-display text-5xl sm:text-6xl lg:text-7xl font-lexend leading-[1.04] tracking-tight"
+                className="font-display text-5xl sm:text-6xl lg:text-7xl lg:mb-1 font-lexend leading-[1.04] tracking-tight"
               >
                 <span className="text-[var(--text)]">Where</span>
                 <br />
